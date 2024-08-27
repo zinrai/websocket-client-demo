@@ -4,27 +4,49 @@ function WebSocketComponent() {
   const [connected, setConnected] = useState(false);
   const [messages, setMessages] = useState([]);
   const wsRef = useRef(null);
+  const startTimeRef = useRef(null);
 
   const connectWebSocket = () => {
     const ws = new WebSocket('ws://localhost:8080');
 
     ws.onopen = () => {
       setConnected(true);
-      console.log('Connected to WebSocket server');
+      console.log(JSON.stringify({
+        event: 'connected',
+        timestamp: new Date().toISOString()
+      }));
+      startTimeRef.current = new Date();
     };
 
     ws.onmessage = (event) => {
-      console.log('Received message:', event.data);
+      const endTime = new Date();
+      const messageLength = event.data.length;
+      const timeTaken = endTime - startTimeRef.current;
+
+      console.log(JSON.stringify({
+        event: 'message_received',
+        timestamp: endTime.toISOString(),
+        messageLength: messageLength,
+        timeTakenMs: timeTaken
+      }));
+
       setMessages(prevMessages => [...prevMessages, event.data]);
     };
 
     ws.onclose = () => {
       setConnected(false);
-      console.log('WebSocket connection closed');
+      console.log(JSON.stringify({
+        event: 'disconnected',
+        timestamp: new Date().toISOString()
+      }));
     };
 
     ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
+      console.error(JSON.stringify({
+        event: 'error',
+        timestamp: new Date().toISOString(),
+        message: error.message
+      }));
     };
 
     wsRef.current = ws;
